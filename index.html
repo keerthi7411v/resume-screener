@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResumeScreener Pro — AI Resume Screening</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <span class="logo">ResumeScreener<span class="accent">Pro</span></span>
+      <a class="nav-link" href="#screener">Get Started</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <h1>Screen resumes in <span class="accent">seconds</span>, not hours</h1>
+    <p>AI-powered resume screening. Upload candidate resumes, paste a job
+       description, and get ranked results with skill-gap analysis.</p>
+    <a href="#screener" class="btn-primary">Start Screening</a>
+  </header>
+
+  <section class="features">
+    <div class="card"><h3>📄 Multi-format Parsing</h3><p>PDF, DOCX and TXT resumes parsed automatically.</p></div>
+    <div class="card"><h3>🧠 NLP Matching</h3><p>TF-IDF similarity blended with skill-coverage scoring.</p></div>
+    <div class="card"><h3>📊 Skill Gap Analysis</h3><p>See exactly which skills each candidate has — and lacks.</p></div>
+    <div class="card"><h3>🏆 Smart Ranking</h3><p>Candidates ranked by a transparent 0–100 suitability score.</p></div>
+  </section>
+
+  <section id="screener" class="screener">
+    <h2>Run a Screening</h2>
+    <form action="{{ url_for('screen') }}" method="post" enctype="multipart/form-data" id="form">
+      <label class="fld-label">Job Description</label>
+      <textarea name="job_description" id="jd" rows="8" required
+        placeholder="Paste the full job description here..."></textarea>
+      <div class="char-count"><span id="count">0</span> characters</div>
+
+      <label class="fld-label">Candidate Resumes</label>
+      <div class="dropzone" id="dropzone">
+        <p><strong>Drag & drop</strong> resumes here or <span class="browse">browse</span></p>
+        <p class="hint">PDF, DOCX, TXT — multiple files supported</p>
+        <input type="file" name="resumes" id="fileInput" multiple
+               accept=".pdf,.docx,.txt" hidden>
+      </div>
+      <ul class="file-list" id="fileList"></ul>
+
+      <button type="submit" class="btn-primary big">Rank Candidates →</button>
+    </form>
+  </section>
+
+  <footer class="footer">
+    <p>Built with Python · scikit-learn · Flask · NLP</p>
+  </footer>
+
+  <script>
+    const dz = document.getElementById("dropzone");
+    const fi = document.getElementById("fileInput");
+    const fl = document.getElementById("fileList");
+    const dt = new DataTransfer();
+
+    dz.addEventListener("click", () => fi.click());
+    dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("over"); });
+    dz.addEventListener("dragleave", () => dz.classList.remove("over"));
+    dz.addEventListener("drop", e => {
+      e.preventDefault(); dz.classList.remove("over"); addFiles(e.dataTransfer.files);
+    });
+    fi.addEventListener("change", () => addFiles(fi.files));
+
+    function addFiles(files) {
+      for (const f of files) dt.items.add(f);
+      fi.files = dt.files;
+      renderList();
+    }
+    function renderList() {
+      fl.innerHTML = "";
+      for (const f of fi.files) {
+        const li = document.createElement("li");
+        li.innerHTML = `<span>📄 ${f.name}</span><span class="size">${(f.size/1024).toFixed(0)} KB</span>`;
+        fl.appendChild(li);
+      }
+    }
+    document.getElementById("jd").addEventListener("input", e => {
+      document.getElementById("count").textContent = e.target.value.length;
+    });
+  </script>
+</body>
+</html>

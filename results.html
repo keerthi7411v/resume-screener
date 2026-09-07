@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results — ResumeScreener Pro</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <nav class="nav"><div class="nav-inner">
+    <span class="logo">ResumeScreener<span class="accent">Pro</span></span>
+  </div></nav>
+
+  <main class="container">
+    <h1>Screening Results</h1>
+    <p class="sub">{{ n }} candidate(s) screened ·
+      JD skills: <strong>{{ jd_skills }}</strong></p>
+
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Rank</th><th>Candidate</th><th>Score</th>
+          <th>Content</th><th>Skills</th>
+          <th>Matching Skills</th><th>Missing Skills</th>
+        </tr></thead>
+        <tbody>
+          {% for r in tables %}
+          <tr>
+            <td><span class="rank-badge">{{ r.rank }}</span></td>
+            <td class="cand-name">{{ r.name }}</td>
+            <td>
+              <div class="score-bar"><div class="fill" style="width:0%"
+                   data-w="{{ r.score }}"></div></div>
+              <span class="score-num">{{ r.score }}%</span>
+            </td>
+            <td>{{ r.content_score }}%</td>
+            <td>{{ r.match_ratio }}%</td>
+            <td class="ok">{{ r.matching_skills }}</td>
+            <td class="miss">{{ r.missing_skills }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" onclick="downloadCSV()">⬇ Download CSV</button>
+      <a href="{{ url_for('index') }}" class="btn-ghost">← New Screening</a>
+    </div>
+  </main>
+
+  <script>
+    const rows = {{ tables | tojson }};
+
+    // bar chart of scores
+    new Chart(document.getElementById("chart"), {
+      type: "bar",
+      data: {
+        labels: rows.map(r => r.name),
+        datasets: [{
+          label: "Suitability Score (%)",
+          data: rows.map(r => r.score),
+          backgroundColor: "#4f7cff",
+          borderRadius: 6
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+
+    // animate score bars
+    document.querySelectorAll(".fill").forEach(el => {
+      requestAnimationFrame(() =>
+        setTimeout(() => el.style.width = el.dataset.w + "%", 100));
+    });
+
+    // client-side CSV export (no server round-trip)
+    function downloadCSV() {
+      const head = ["rank","name","score","content_score","match_ratio",
+                    "matching_skills","missing_skills"];
+      const esc = v => `"${String(v).replaceAll('"', '""')}"`;
+      const csv = [head.join(",")]
+        .concat(rows.map(r => head.map(h => esc(r[h])).join(","))).join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      a.download = "screening_results.csv";
+      a.click();
+    }
+  </script>
+</body>
+</html>
